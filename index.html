@@ -1,0 +1,156 @@
+<!doctype html>
+<html lang="it"><head><meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Centralina TX 433 MHz – modello 3D · Energy in Lab</title>
+<style>
+:root{--bg1:#f4f7fb;--bg2:#d5e0ec;--panel:#fff;--ink:#17324a;--mut:#536779;--line:#d3dee8;--acc:#123b63;--accink:#fff;--soft:#e7eef5;box-sizing:border-box;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}
+@media(prefers-color-scheme:dark){:root:not([data-theme="light"]){--bg1:#223244;--bg2:#0d141c;--panel:#17212c;--ink:#e3ecf5;--mut:#9db0c2;--line:#2b3a4a;--acc:#4a90d9;--accink:#06121f;--soft:#233242}}
+:root[data-theme="dark"]{--bg1:#223244;--bg2:#0d141c;--panel:#17212c;--ink:#e3ecf5;--mut:#9db0c2;--line:#2b3a4a;--acc:#4a90d9;--accink:#06121f;--soft:#233242}
+html,body{height:100%;margin:0}body{background:var(--bg2);color:var(--ink);font:14px/1.4 system-ui,Arial,sans-serif;display:flex;flex-direction:column;overflow:auto}
+header{padding:10px 16px;background:var(--panel);border-bottom:1px solid var(--line)}h1{font-size:17px;margin:0}header p{margin:2px 0 0;font-size:12px;color:var(--mut)}
+main{flex:1;min-height:0;display:grid;grid-template-columns:minmax(0,1fr) 290px;gap:10px;padding:10px}
+#stage{position:relative;border:1px solid var(--line);border-radius:12px;overflow:hidden;background:radial-gradient(circle at 50% 30%,var(--bg1),var(--bg2));min-height:420px}
+canvas{width:100%;height:100%;display:block;cursor:grab;touch-action:none}canvas:active{cursor:grabbing}
+#lbs{position:absolute;inset:0;pointer-events:none;overflow:hidden}
+.lb{position:absolute;transform:translate(-50%,-100%);background:var(--panel);color:var(--ink);border:1px solid var(--line);border-radius:6px;padding:2px 6px;font:600 11px/1.3 system-ui,Arial;white-space:nowrap;opacity:.95}
+.tip{position:absolute;left:10px;bottom:8px;font-size:11px;color:var(--mut);background:var(--panel);padding:4px 8px;border-radius:6px;opacity:.9;pointer-events:none}
+aside{background:var(--panel);border:1px solid var(--line);border-radius:12px;padding:12px;overflow:auto}
+footer{padding:6px 16px;text-align:right;font-size:12px;font-weight:600;color:var(--mut);background:var(--panel);border-top:1px solid var(--line)}
+h2{font-size:13px;margin:12px 0 6px;color:var(--acc);text-transform:uppercase;letter-spacing:.04em}h2:first-child{margin-top:0}
+label{display:flex;gap:8px;align-items:center;margin:5px 0;font-size:13px}
+button{background:var(--acc);color:var(--accink);border:0;border-radius:7px;padding:8px 10px;margin:2px;cursor:pointer;font:600 12px system-ui}button.l{background:var(--soft);color:var(--ink)}
+#info{background:var(--soft);border-radius:8px;padding:10px;font-size:12.5px}#info b{display:block;margin-bottom:3px;font-size:13px}
+.lg{display:flex;gap:6px;align-items:center;font-size:12px;margin:3px 0}.lg i{width:12px;height:12px;border-radius:3px;display:inline-block}
+@media(max-width:800px){main{display:block}#stage{height:62vh;min-height:360px;margin-bottom:10px}}
+</style></head><body>
+<header><h1>Centralina TX 433 MHz – modello 3D interattivo · <span style="color:var(--acc)">Energy in Lab</span></h1><p>Cassetta 200 × 200 × 95 mm · Arduino UNO · LM7809 / LM7805 · bus centro stella · FS100A</p></header>
+<main><section id="stage"><canvas id="c"></canvas><div id="lbs"></div><div class="tip">Trascina per ruotare · rotella o pizzico per zoom · clic su un componente per i dettagli</div></section>
+<aside><h2>Componenti</h2><div id="chk"></div>
+<h2>Viste</h2><div id="btn"></div>
+<h2>Dettagli</h2><div id="info"><b>Seleziona un componente</b>Fai clic su una parte del modello per leggerne la funzione.</div>
+<h2>Bus centro stella</h2>
+<div class="lg"><i style="background:#e0453d"></i>Massa alimentazione (Arduino, batteria, LDO)</div>
+<div class="lg"><i style="background:#2fa04f"></i>Massa analogica (NTC, LEM, partitore)</div>
+<div class="lg"><i style="background:#9a55c8"></i>Massa antenna (modulo RF, SMA)</div>
+<p style="font-size:11.5px;color:var(--mut);margin:12px 0 0"><b>Nota:</b> modello concettuale. Posizioni, cablaggi e ingombri sono indicativi e vanno verificati sui componenti reali prima di forare o saldare.</p></aside></main><footer>Developed By Liborio Perri</footer>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+<script>
+const T=THREE,$=s=>document.querySelector(s),stage=$('#stage'),cv=$('#c'),lbs=$('#lbs');
+const R=new T.WebGLRenderer({canvas:cv,antialias:true,alpha:true});R.setPixelRatio(Math.min(devicePixelRatio||1,2));R.shadowMap.enabled=true;R.shadowMap.type=T.PCFSoftShadowMap;
+const S=new T.Scene(),cam=new T.PerspectiveCamera(38,1,10,4000);
+S.add(new T.HemisphereLight(0xffffff,0x8899aa,.9));
+const sun=new T.DirectionalLight(0xffffff,.85);sun.position.set(200,300,420);sun.castShadow=true;sun.shadow.mapSize.set(2048,2048);
+Object.assign(sun.shadow.camera,{left:-380,right:380,top:380,bottom:-380,near:50,far:1400});sun.shadow.camera.updateProjectionMatrix();sun.shadow.bias=-.0005;S.add(sun);
+const gnd=new T.Mesh(new T.PlaneGeometry(1400,1400),new T.ShadowMaterial({opacity:.25}));gnd.position.z=-.3;gnd.receiveShadow=true;S.add(gnd);const U=new T.Group();U.rotation.x=Math.PI/2;S.add(U);
+// ---------- helpers
+const M=(c,o={})=>new T.MeshStandardMaterial(Object.assign({color:c,roughness:.6,metalness:.05},o));
+const MT={m:{metalness:.85,roughness:.28}};
+function B(p,w,h,d,c,x,y,z,o){const m=new T.Mesh(new T.BoxGeometry(w,h,d),(c.isMaterial||Array.isArray(c))?c:M(c,o));m.position.set(x,y,z);m.castShadow=m.receiveShadow=true;p.add(m);return m}
+function C(p,r,h,c,x,y,z,a={}){const m=new T.Mesh(new T.CylinderGeometry(a.rt??r,r,h,a.s||24),M(c,a.m));m.position.set(x,y,z);if(a.rx)m.rotation.x=a.rx;m.castShadow=m.receiveShadow=true;p.add(m);return m}
+const reg={};function grp(k,n,i,ex=0,p=U){const g=new T.Group();g.userData={n,i,ex};reg[k]=g;p.add(g);return g}
+function tex(w,h,fn){const c=document.createElement('canvas');c.width=w;c.height=h;fn(c.getContext('2d'),w,h);const t=new T.CanvasTexture(c);t.anisotropy=4;return t}
+const perf=(base,pad,nx,ny)=>tex(nx*8,ny*8,(x,w,h)=>{x.fillStyle=base;x.fillRect(0,0,w,h);x.fillStyle=pad;for(let i=0;i<nx;i++)for(let j=0;j<ny;j++){x.beginPath();x.arc(i*8+4,j*8+4,2.2,0,7);x.fill()}});
+const wires=grp('wires','Cablaggi','Collegamenti indicativi: alimentazione 12 V (rosso), +9 V (arancio), +5 V (rosso), segnali analogici A0/A1 (blu/verde), 1-Wire D2 (giallo), dati TX verso FS100A (viola), masse al bus (nero), cavo coassiale RG174 verso SMA.');
+function W(pts,c,r=1.1,p=wires){const cu=new T.CatmullRomCurve3(pts.map(q=>new T.Vector3(...q)));const m=new T.Mesh(new T.TubeGeometry(cu,48,r,8),M(c,{roughness:.45}));m.castShadow=true;p.add(m)}
+const SO=(g,x,z)=>C(g,2.6,5,'#d6a73b',x,5.5,z,{m:{metalness:.7,roughness:.4}});
+function PB(g,w,d,x,z,base,pad,nx,ny,ed){const s=M(ed),t=M('#fff',{map:perf(base,pad,nx,ny),roughness:.7});B(g,w,2,d,[s,s,t,s,s,s],x,9,z);[[-1,-1],[1,-1],[-1,1],[1,1]].forEach(q=>SO(g,x+q[0]*(w/2-4),z+q[1]*(d/2-4)))}
+function TB(g,x,z,n){const w=n*5.1;B(g,w,9,8,'#1f9d4a',x,14.5,z);for(let i=0;i<n;i++)C(g,1.9,1,'#cfd6dc',x-w/2+2.55+i*5.1,19.3,z,MT)}
+function R1(g,x,z,cols){C(g,1.5,7,'#d9c08a',x,13.5,z);C(g,.35,3,'#999',x,11,z);C(g,.35,3,'#999',x,17.5,z);cols.forEach((c,i)=>C(g,1.62,.9,c,x,11.8+i*1.9+1,z))}
+const isVis=o=>{while(o){if(!o.visible)return false;o=o.parent}return true};
+const labels=[];function L(p,t,pos){const m=new T.Object3D();m.position.set(...pos);p.add(m);const e=document.createElement('div');e.className='lb';e.textContent=t;lbs.appendChild(e);labels.push({m,e})}
+// ---------- cassetta
+const cs=grp('case','Cassetta stagna','Contenitore in ABS grigio 200 × 200 × 95 mm con grado IP65, quattro distanziali di fissaggio per i millefori e quattro pressacavi sul lato frontale.');
+const cm=M('#c4ccd3',{roughness:.45});
+B(cs,200,3,200,cm,0,1.5,0);B(cs,4,95,200,cm,-98,47.5,0);B(cs,4,95,200,cm,98,47.5,0);B(cs,192,95,4,cm,0,47.5,-98);B(cs,192,95,4,cm,0,47.5,98);
+[[-91,-91],[91,-91],[-91,91],[91,91]].forEach(q=>C(cs,5,89,'#b3bcc5',q[0],47.5,q[1],{s:20}));
+[[-1,-70],[1,-70],[-1,70],[1,70]].forEach(([s,z])=>{B(cs,26,3,24,cm,s*113,1.5,z);C(cs,3.6,3.4,'#2a323a',s*117,1.5,z,{s:16});C(cs,6,2,'#cfd6dc',s*117,4,z,Object.assign({s:6},MT))});
+// ---------- millefori principale
+const main=grp('main','Millefori principale 7 × 9 cm','Interfaccia sensori: morsettiere, partitore NTC, pull-up DS18B20 e bus centro stella a tre sezioni di massa.',25);
+PB(main,70,90,-53,40,'#c98d3c','#ead7a0',27,35,'#a8742f');TB(main,-70,4,4);TB(main,-35,4,3);
+const bus=grp('bus','Bus centro stella','Barra di rame 10 × 3 mm saldata sulla millefori: tre gruppi di saldature separati (alimentazione, analogica, antenna) che si ricongiungono in un solo punto, così le correnti dei vari sottosistemi non si mescolano.',0,main);
+B(bus,56,3.5,8,'#c8864a',-55,11.75,76,{metalness:.75,roughness:.35});
+const BC=['#e0453d','#2fa04f','#9a55c8'],BX=[-72,-55,-38];
+BX.forEach((xc,i)=>{[-5,0,5].forEach(d=>C(bus,2.1,2.2,'#d3dae0',xc+d,14.6,76,Object.assign({s:6},MT)));B(bus,16,.4,5,BC[i],xc,10.2,84)});
+const ntc=grp('ntc','Partitore NTC','Partitore resistivo con termistore NTC 10 kΩ (RS PRO) verso l’ingresso analogico A1 dell’Arduino.',0,main);
+R1(ntc,-80,18,['#7a4a1c','#111','#e8731c']);R1(ntc,-74,18,['#7a4a1c','#111','#e8731c']);
+const pull=grp('pull','Pull-up DS18B20','Resistenza di pull-up da 4,7 kΩ tra linea dati 1-Wire e +5 V, necessaria al sensore di temperatura DS18B20.',0,main);
+R1(pull,-33,18,['#e6d02a','#7a3fa0','#c33']);
+// ---------- regolatori
+const rg=grp('reg','Moduli LM7809 e LM7805','Due regolatori lineari in cascata dalla batteria da 12 V: LM7809 genera +9 V per l’Arduino, LM7805 genera +5 V per il trasmettitore e i sensori. Il dissipatore smaltisce il calore.',95);
+[[-62,'#1c55a3'],[-22,'#1c55a3']].forEach(([z,c])=>{const x=-55;B(rg,42,1.6,30,c,x,9,z);[[-1,-1],[1,-1],[-1,1],[1,1]].forEach(q=>SO(rg,x+q[0]*17,z+q[1]*11));
+B(rg,9,10,16,'#1f9d4a',x-17,15,z);C(rg,1.9,1,'#cfd6dc',x-17,20.3,z-4,MT);C(rg,1.9,1,'#cfd6dc',x-17,20.3,z+4,MT);
+B(rg,16,18,2,'#c4ccd3',x+2,19,z-8,{metalness:.8,roughness:.3});B(rg,10,12,4.5,'#1d1d1d',x+2,16,z-5.5);
+[x+8,x+17].forEach(cx=>{C(rg,4.8,11,'#15191e',cx,15.5,z+7);C(rg,4.5,.4,'#c9d1d8',cx,21.1,z+7,MT)})});
+// ---------- Arduino
+const ux=36,uz=40,uno=grp('uno','Arduino UNO','Scheda 68,6 × 53,4 mm con ATmega328P. Legge LEM su A0 e NTC su A1, il DS18B20 su D2 (1-Wire) e invia i dati al modulo FS100A a 433 MHz.',45);
+const ut=tex(512,384,(x,w,h)=>{x.fillStyle='#1b5da8';x.fillRect(0,0,w,h);x.fillStyle='#fff';x.textAlign='center';x.font='bold 46px Arial';x.fillText('ARDUINO',w*.64,h*.5);x.font='bold 60px Arial';x.fillText('UNO',w*.64,h*.7);x.fillStyle='#e9ecf0';x.beginPath();x.arc(w*.2,h*.36,26,0,7);x.fill()});
+const us=M('#164a8a');B(uno,68.6,1.6,53.4,[us,us,M('#fff',{map:ut}),us,us,us],ux,9.2,uz);
+[[-1,-1],[1,-1],[-1,1],[1,1]].forEach(q=>SO(uno,ux+q[0]*29,uz+q[1]*21));
+B(uno,16,11,12,'#c9d1d8',ux-26.3,15.5,uz-16,{metalness:.8,roughness:.3});B(uno,14,13,9,'#1a1a1a',ux-26.3,16.5,uz+16);
+B(uno,35,4,9,'#14171b',ux+10,12,uz+10);B(uno,50,8.5,2.6,'#16191d',ux+4,14.25,uz-24);B(uno,40,8.5,2.6,'#16191d',ux+8,14.25,uz+24.5);
+C(uno,3,3,'#c33',ux-24,11.5,uz-3);B(uno,8,3,4,'#cfd6dc',ux-6,11.5,uz+2,{metalness:.8});
+// ---------- RF
+const rf=grp('rf','Millefori RF 5 × 7 cm + FS100A','Trasmettitore FS100A a 433 MHz su millefori dedicata, con massa separata (sezione antenna del bus) e cavo coassiale RG174 verso l’adattatore SMA sul coperchio.',70);
+PB(rf,50,70,38,-48,'#1f7a4e','#e0c878',19,27,'#166040');B(rf,34,1.6,24,'#2c9a68',38,11,-48);B(rf,11,2.4,11,'#161b20',32,13,-48);C(rf,6.5,3,'#d2ae55',46,13,-48,MT);
+[33,35.5,38,40.5,43].forEach(x=>C(rf,.8,6,'#d2ae55',x,13,-34,MT));B(rf,4,2,4,'#d2ae55',22,11,-78,MT);
+// ---------- pressacavi + esterni
+const gl=grp('glands','Pressacavi e collegamenti esterni','Quattro pressacavi M16 sul lato frontale: batteria 12 V (rosso), LEM HO 60-P-0100 (blu), NTC RS PRO 10K (verde), DS18B20 (giallo). Ciascun cavo esce da un ingresso dedicato.');
+const GC=['#e0453d','#2f7fd0','#33a853','#e8b923'],GX=[-67,-22,23,68],EN=[[28,169],[28,174],[18,172],[3,170]],h2=Math.PI/2;
+GX.forEach((x,i)=>{const c=GC[i];C(gl,9,5,'#d5dbe0',x,42,93.5,{rx:h2,s:6});C(gl,7,14,'#9aa6b1',x,42,103,{rx:h2});C(gl,9,10,'#dfe4e8',x,42,115,{rx:h2,s:8});C(gl,9.3,2,c,x,42,118,{rx:h2});C(gl,6.5,7,'#2a323a',x,42,123.5,{rx:h2,rt:4.2});
+ const [ye,ze]=EN[i];W([[x,42,125],[x,41,136],[x,(42+ye)/2,152],[x,ye+2,ze-6],[x,ye,ze]],c,2.4,gl)});
+const bt=tex(256,128,(x,w,h)=>{x.fillStyle='#37424d';x.fillRect(0,0,w,h);x.fillStyle='#fff';x.font='bold 44px Arial';x.textAlign='center';x.fillText('12 V DC',w/2,h*.62)}),bs=M('#37424d');
+B(gl,44,32,26,[bs,bs,M('#fff',{map:bt}),bs,bs,bs],-67,16,182);C(gl,2.2,3,'#e0453d',-75,33.5,182);C(gl,2.2,3,'#111',-59,33.5,182);
+B(gl,36,36,16,'#2d6fb8',-22,18,182);const tr=new T.Mesh(new T.TorusGeometry(9,2.4,12,36),M('#111a24'));tr.position.set(-22,18,190.5);tr.castShadow=true;gl.add(tr);
+C(gl,2.4,18,'#1d6f3c',23,9,172);C(gl,3,42,'#c9d1d8',68,3,191,Object.assign({rx:h2},MT));
+// ---------- coperchio + antenna
+const ld=grp('lid','Coperchio','Coperchio trasparente, apribile per accedere ai circuiti.',150);
+B(ld,206,3,206,M('#cfe3f2',{transparent:true,opacity:.28,roughness:.1,depthWrite:false}),0,98,0);
+const fm=M('#c4ccd3');B(ld,206,5,6,fm,0,97.5,-100);B(ld,206,5,6,fm,0,97.5,100);B(ld,6,5,200,fm,-100,97.5,0);B(ld,6,5,200,fm,100,97.5,0);
+const an=grp('ant','Antenna SMA 433 MHz','Adattatore SMA passaparete IP65 sul lato superiore della cassetta (a muro), opposto ai pressacavi, con antenna flessibile dritta rivolta verso l’alto. Il cavo coassiale RG174 (50 Ω) arriva al modulo RF.');
+C(an,4,16,'#c9a24a',40,50,-98,Object.assign({rx:h2},MT));C(an,7,4,'#b9a46a',40,50,-93,Object.assign({rx:h2,s:6},MT));C(an,7,4,'#b9a46a',40,50,-102,Object.assign({rx:h2,s:6},MT));C(an,4.5,10,'#c9a24a',40,50,-107,Object.assign({rx:h2},MT));
+C(an,4.4,10,'#c9a24a',40,50,-117,Object.assign({rx:h2},MT));
+C(an,4.6,70,'#15181c',40,50,-157,{rt:3.2,rx:-h2});const tp=new T.Mesh(new T.SphereGeometry(3.2,16,12),M('#15181c'));tp.position.set(40,50,-192);tp.castShadow=true;an.add(tp);
+W([[40,50,-90],[36,40,-88],[28,24,-82],[22,14,-77]],'#d59a6a',1.6);
+// ---------- cablaggi
+W([[-67,42,96],[-80,34,92],[-95,29,80],[-95,29,0],[-92,22,-40],[-77,19,-62]],'#e0453d');W([[-95,29,-30],[-77,19,-22]],'#e0453d');
+W([[-36,13,-62],[-20,14,-45],[-10,14,10],[0,15,50],[8,17,56]],'#f08a24');W([[-36,13,-22],[-18,14,-12],[-4,13,22],[14,13,40],[30,19,63]],'#e0453d');
+W([[50,19,15],[50,26,-5],[40,22,-20],[38,16,-33]],'#8a4fc4');
+[['#2f7fd0',0],['#33a853',3],['#e8b923',6]].forEach(([c,o])=>W([[-40+o,19,2],[-12,24+o/3,14],[8,25+o/3,40],[26+o,20,63]],c,.9));
+W([[-22,42,92],[-26,32,80],[-30,24,40],[-35,20,8]],'#2f7fd0');W([[23,42,92],[0,36,90],[-45,30,88],[-68,26,50],[-70,20,10]],'#33a853');W([[68,42,92],[0,40,92],[-35,34,86],[-60,28,50],[-67,20,10]],'#e8b923');
+BX.forEach((xc,i)=>W([[xc,16,76],[xc,24,70],[xc+(i-1)*4,26,60]],'#14181c',1));
+W([[-72,16,76],[-72,26,40],[-72,27,-20],[-60,16,-60]],'#14181c',1);W([[-38,16,76],[-20,30,40],[10,28,-20],[18,12,-40]],'#14181c',1);
+// ---------- etichette
+L(uno,'Arduino UNO',[ux,30,uz]);L(main,'Millefori principale 7 × 9 cm',[-53,30,52]);L(rf,'Millefori RF + FS100A',[38,26,-48]);L(rg,'LM7809 · 9 V',[-55,30,-62]);L(rg,'LM7805 · 5 V',[-55,30,-22]);
+L(bus,'Bus centro stella',[-55,24,76]);L(ntc,'Partitore NTC',[-77,26,18]);L(pull,'Pull-up 4,7 kΩ',[-33,26,18]);L(an,'Antenna SMA 433 MHz',[40,50,-196]);
+L(gl,'Batteria 12 V',[-67,40,182]);L(gl,'LEM HO 60-P-0100',[-22,42,182]);L(gl,'NTC 10K',[23,26,172]);L(gl,'DS18B20',[68,14,191]);
+// ---------- interfaccia
+const vis={wires:true},K=[['lid','Coperchio'],['ant','Antenna SMA 433 MHz'],['case','Scatola stagna'],['main','Millefori principale 7 × 9'],['bus','  Bus centro stella'],['ntc','  Partitore NTC'],['pull','  Pull-up DS18B20'],['rf','Millefori RF + FS100A'],['uno','Arduino UNO'],['reg','Moduli LM7809 e LM7805'],['glands','Pressacavi e sensori esterni'],['wires','Cablaggi']];
+K.forEach(([k,t])=>{const l=document.createElement('label');l.innerHTML='<input type="checkbox" checked><span style="white-space:pre">'+t+'</span>';l.firstChild.onchange=e=>{vis[k]=e.target.checked;if(k!=='wires')reg[k].visible=e.target.checked};$('#chk').appendChild(l)});
+const goal={th:.5,ph:1.4,r:650},cur={...goal};let ex=0,exT=0,auto=false,show=true,glassOn=false;
+const go=(th,ph,r)=>Object.assign(goal,{th,ph,r});
+const ACT={iso:()=>go(.5,1.4,650),top:()=>go(1.57,1.5,650),front:()=>go(0,1.55,650),back:()=>go(Math.PI,1.3,650),ex:()=>{exT=exT?0:1},lab:()=>{show=!show},auto:()=>{auto=!auto},glass:()=>{glassOn=!glassOn;Object.assign(cm,{transparent:glassOn,opacity:glassOn?.2:1,depthWrite:!glassOn});cm.needsUpdate=true}};
+[['iso','Isometrica'],['top','Laterale'],['front','Frontale'],['back','Retro'],['ex','Esplodi / ricomponi'],['lab','Etichette'],['glass','Scatola trasparente'],['auto','Rotazione auto']].forEach(([k,t],i)=>{const b=document.createElement('button');b.textContent=t;if(i>2)b.className='l';b.onclick=ACT[k];$('#btn').appendChild(b)});
+// ---------- camera e input
+const clamp=(v,a,b)=>Math.max(a,Math.min(b,v)),tgt=new T.Vector3(0,-10,40),ptr=new Map();let moved=0,pd=0;
+const pinch=()=>{if(ptr.size<2)return 0;const a=[...ptr.values()];return Math.hypot(a[0][0]-a[1][0],a[0][1]-a[1][1])};
+cv.addEventListener('pointerdown',e=>{cv.setPointerCapture(e.pointerId);ptr.set(e.pointerId,[e.clientX,e.clientY]);moved=0;pd=pinch()});
+cv.addEventListener('pointermove',e=>{const p=ptr.get(e.pointerId);if(!p)return;const dx=e.clientX-p[0],dy=e.clientY-p[1];p[0]=e.clientX;p[1]=e.clientY;moved+=Math.abs(dx)+Math.abs(dy);
+ if(ptr.size==1){goal.th-=dx*.008;goal.ph=clamp(goal.ph-dy*.006,.02,1.55);cur.th=goal.th;cur.ph=goal.ph}else{const d=pinch();if(pd){goal.r=clamp(goal.r*pd/d,150,900);cur.r=goal.r}pd=d}});
+const up=e=>{ptr.delete(e.pointerId);if(!ptr.size&&moved<6&&e.type==='pointerup')pick(e)};cv.addEventListener('pointerup',up);cv.addEventListener('pointercancel',up);
+cv.addEventListener('wheel',e=>{e.preventDefault();goal.r=clamp(goal.r*(e.deltaY>0?1.08:.92),150,900)},{passive:false});
+const rc=new T.Raycaster(),v2=new T.Vector2(),v3=new T.Vector3();
+function pick(e){const r=cv.getBoundingClientRect();v2.set((e.clientX-r.left)/r.width*2-1,-(e.clientY-r.top)/r.height*2+1);rc.setFromCamera(v2,cam);
+ for(const h of rc.intersectObjects(S.children,true)){if(!isVis(h.object)||h.object.material.transparent)continue;let o=h.object;while(o&&!o.userData.n)o=o.parent;if(o){$('#info').innerHTML='<b>'+o.userData.n+'</b>'+o.userData.i;return}}}
+function resize(){const w=stage.clientWidth,h=stage.clientHeight;R.setSize(w,h,false);cam.aspect=w/h;cam.updateProjectionMatrix()}
+new ResizeObserver(resize).observe(stage);resize();
+function tick(){requestAnimationFrame(tick);ex+=(exT-ex)*.1;
+ for(const k in reg){const g=reg[k];if(g.userData.ex&&g.parent===U)g.position.y=g.userData.ex*ex}
+ reg.wires.visible=vis.wires&&ex<.04;
+ if(auto&&!ptr.size)goal.th+=.004;
+ for(const k of ['th','ph','r'])cur[k]+=(goal[k]-cur[k])*.12;
+ cam.position.set(tgt.x+cur.r*Math.sin(cur.ph)*Math.sin(cur.th),tgt.y+cur.r*Math.cos(cur.ph),tgt.z+cur.r*Math.sin(cur.ph)*Math.cos(cur.th));cam.lookAt(tgt);
+ R.render(S,cam);
+ const w=stage.clientWidth,h=stage.clientHeight;
+ labels.forEach(l=>{if(!show||!isVis(l.m)){l.e.style.display='none';return}l.m.getWorldPosition(v3);v3.project(cam);if(v3.z>1){l.e.style.display='none';return}l.e.style.display='block';l.e.style.left=(v3.x*.5+.5)*w+'px';l.e.style.top=(-v3.y*.5+.5)*h+'px'})}
+tick();
+</script></body></html>
